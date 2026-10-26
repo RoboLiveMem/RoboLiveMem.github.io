@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>RoboLiveMem: Live Robot Memory When the World Does Not Wait</title>
+<meta name="description" content="RoboLiveMem: a benchmark for live memory in agentic robots, where the world keeps changing while the robot thinks and acts.">
+<meta property="og:title" content="RoboLiveMem: Live Robot Memory When the World Does Not Wait">
+<meta property="og:description" content="A benchmark for live memory in agentic robots.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Public+Sans:ital,wght@0,400;0,600;0,700;1,400&display=swap">
+<style>
+:root {
+  --bg: #ffffff;
+  --ink: #252a33;
+  --muted: #5d6571;
+  --line: #e2e5ea;
+  --soft: #f4f5f8;
+  --accent: #1c2d6b;
+  --sans: "Public Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #12151b; --ink: #e2e5eb; --muted: #9aa2ad; --line: #2a2f39; --soft: #191d25; --accent: #a9b8f5;
+    color-scheme: dark;
+  }
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--ink);
+  font: 17px/1.75 var(--sans);
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+a:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; border-radius: 999px; }
+.hero { max-width: 1040px; margin: 0 auto; padding: 88px 0 8px; text-align: center; }
+h1 {
+  font-size: clamp(44px, 7vw, 72px); line-height: 1.05; font-weight: 700; color: var(--accent);
+  letter-spacing: -0.03em; margin: 0 0 20px;
+}
+.hero-line {
+  font-size: clamp(19px, 2.6vw, 25px); line-height: 1.45; max-width: 760px; margin: 0 auto 30px;
+  color: var(--ink); text-wrap: balance;
+}
+.links { display: flex; justify-content: center; flex-wrap: wrap; gap: 12px; margin-bottom: 8px; }
+.button {
+  display: inline-flex; align-items: center; gap: 8px; padding: 9px 20px; border-radius: 999px;
+  background: var(--soft); color: var(--ink); border: 1px solid var(--line);
+  font-size: 16px; font-weight: 600; line-height: 1.4;
+}
+.button:hover { text-decoration: none; border-color: var(--muted); }
+.button svg { width: 18px; height: 18px; fill: currentColor; }
+.abstract { max-width: 760px; margin: 56px auto 96px; }
+.abstract h2 { font-size: 26px; line-height: 1.25; font-weight: 700; letter-spacing: -0.02em; text-align: center; margin: 0 0 18px; }
+.abstract p { margin: 0; text-align: justify; hyphens: auto; }
+@media (max-width: 560px) { .hero { padding-top: 56px; } .abstract p { text-align: left; } }
+</style>
+</head>
+<body>
+<header class="hero">
+  <h1>RoboLiveMem</h1>
+  <p class="hero-line">Live Robot Memory When the World Does Not Wait</p>
+  <div class="links">
+    <a class="button" href="https://github.com/RoboLiveMem/RoboLiveMem">
+      <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+      Code
+    </a>
+  </div>
+</header>
+
+<main>
+  <section class="abstract" aria-labelledby="abstract-title">
+    <h2 id="abstract-title">Abstract</h2>
+    <p>Robots must remember a world that keeps changing while they think and act. Yet robot-memory evaluation commonly
+    freezes the environment during model inference, leaving the freshness of memory untested. We introduce RoboLiveMem, a
+    benchmark for live memory in agentic robots. RoboLiveMem advances the world during deliberation and evaluates whether
+    agents acquire transient observations, update hidden state, and act using memories that remain valid. The benchmark
+    combines latency-charged RoboMME evaluation, live-native tasks, and household simulations involving object swaps,
+    concealed locations, residual heat, and fleeting instructions. Paired hidden, visible, and static conditions, together
+    with fresh-observation and memory-oracle interventions, distinguish memory failures from execution delays. Experiments
+    with frontier agents reveal that strong paused-world performance can coexist with stale decisions and missed memory
+    updates. A fresh view at action time can leave these failures unresolved when the relevant change is no longer
+    visible. RoboLiveMem provides a controlled testbed for developing embodied agents whose memory keeps pace with a
+    changing world.</p>
+  </section>
+</main>
+
+</body>
+</html>
