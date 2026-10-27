@@ -4,90 +4,363 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>RoboLiveMem: Live Robot Memory When the World Does Not Wait</title>
-<meta name="description" content="RoboLiveMem: a benchmark for live memory in agentic robots, where the world keeps changing while the robot thinks and acts.">
+<meta name="description" content="RoboLiveMem: an evaluation protocol and benchmark for robot memory in a world that keeps running while the robot thinks.">
 <meta property="og:title" content="RoboLiveMem: Live Robot Memory When the World Does Not Wait">
-<meta property="og:description" content="A benchmark for live memory in agentic robots.">
+<meta property="og:description" content="Frontier agents score 92 to 99% on RoboMME when the world waits for them. When it does not, they fall.">
+<meta property="og:image" content="https://robolivemem.github.io/media/mugs_poster.jpg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Public+Sans:ital,wght@0,400;0,600;0,700;1,400&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:ital,wght@0,400;0,600;1,400&display=swap">
 <style>
 :root {
-  --bg: #ffffff;
-  --ink: #252a33;
-  --muted: #5d6571;
-  --line: #e2e5ea;
-  --soft: #f4f5f8;
-  --accent: #1c2d6b;
-  --sans: "Public Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+  --bg: #ffffff; --ink: #1f2329; --ink2: #3f4650; --muted: #6b7280; --line: #e6e8ec; --soft: #f5f6f8;
+  --accent: #1c1a5e; --live: #3d2f78; --paused: #8b9099; --link: #b9b0d6; --drop: #9b3a33;
+  --c1: #1a1660; --c2: #94783a; --c3: #2d5a4a; --c4: #7a1f1f; --grid: #eceef1; --redbar: #b42318;
+  --sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+  --serif: "Source Serif 4", Georgia, serif;
   color-scheme: light;
 }
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #12151b; --ink: #e2e5eb; --muted: #9aa2ad; --line: #2a2f39; --soft: #191d25; --accent: #a9b8f5;
+    --bg: #111318; --ink: #e8eaee; --ink2: #c4c8cf; --muted: #9aa1ab; --line: #2a2e36; --soft: #191c22;
+    --accent: #b8b4f2; --live: #a99cf0; --paused: #8b9099; --link: #5d5590; --drop: #e48b80;
+    --c1: #9d98ef; --c2: #d6b673; --c3: #7cc0a4; --c4: #e3857f; --grid: #23272e; --redbar: #f2786b;
     color-scheme: dark;
   }
 }
 * { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
 body {
-  margin: 0; background: var(--bg); color: var(--ink);
-  font: 17px/1.75 var(--sans);
-  padding-left: max(16px, env(safe-area-inset-left, 0px));
-  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  margin: 0; background: var(--bg); color: var(--ink); font: 16.5px/1.7 var(--sans);
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
 }
 a { color: var(--accent); text-decoration: none; }
 a:hover { text-decoration: underline; }
-a:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; border-radius: 999px; }
-.hero { max-width: 1040px; margin: 0 auto; padding: 88px 0 8px; text-align: center; }
-h1 {
-  font-size: clamp(44px, 7vw, 72px); line-height: 1.05; font-weight: 700; color: var(--accent);
-  letter-spacing: -0.03em; margin: 0 0 20px;
+.wrap { max-width: 1040px; margin: 0 auto; }
+.narrow { max-width: 760px; margin: 0 auto; }
+/* hero */
+.hero { text-align: center; padding: 80px 0 12px; }
+h1 { font-size: clamp(44px, 7vw, 70px); line-height: 1.04; font-weight: 700; color: var(--accent); letter-spacing: -0.035em; margin: 0 0 16px; }
+.hero-line { font-size: clamp(19px, 2.5vw, 24px); line-height: 1.4; margin: 0 auto 22px; max-width: 760px; text-wrap: balance; color: var(--ink); }
+.authors { font-size: 17px; font-weight: 600; margin: 0 0 2px; }
+.authors sup, .affil sup { font-weight: 500; font-size: 0.68em; }
+.authors span { margin: 0 10px; white-space: nowrap; }
+.affil { color: var(--muted); font-size: 15.5px; margin: 0 0 22px; }
+.affil span { margin: 0 10px; white-space: nowrap; }
+.links { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; }
+.button { display: inline-flex; align-items: center; gap: 8px; padding: 8px 18px; border-radius: 999px; background: var(--soft);
+  color: var(--muted); border: 1px solid var(--line); font-size: 15px; font-weight: 600; }
+.button svg { width: 17px; height: 17px; fill: currentColor; }
+/* sections */
+section { padding: 34px 0 18px; }
+h2 { font-size: 27px; line-height: 1.25; letter-spacing: -0.02em; font-weight: 700; margin: 0 0 10px; text-wrap: balance; }
+.kicker { font-size: 12.5px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 0 0 6px; }
+.lead { color: var(--ink2); max-width: 760px; margin: 0 0 22px; }
+.abstract p { font-family: var(--serif); font-size: 18px; line-height: 1.7; text-align: justify; hyphens: auto; margin: 0; }
+figure { margin: 0; }
+figcaption { color: var(--muted); font-size: 14.5px; line-height: 1.6; margin-top: 10px; }
+figcaption b { color: var(--ink); font-weight: 600; }
+video { width: 100%; display: block; border-radius: 10px; background: #000; }
+.teaser { margin-top: 34px; }
+.vlabels { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px; font-size: 14px; font-weight: 600; }
+.vlabels span:first-child { color: var(--paused); }
+.vlabels span:last-child { color: var(--live); }
+/* setting strip */
+.strip { display: grid; grid-template-columns: 150px repeat(4, 1fr); gap: 10px 10px; align-items: center; }
+.strip .rowlab { font-size: 14px; line-height: 1.35; font-weight: 600; }
+.strip .rowlab small { display: block; font-weight: 400; color: var(--muted); font-size: 12.5px; }
+.frame { position: relative; border-radius: 7px; overflow: hidden; min-width: 0; }
+.frame img { display: block; width: 100%; height: auto; }
+.frame .cap { position: absolute; left: 6px; top: 6px; background: rgba(255,255,255,.9); color: #1f2329; font-size: 11.5px; font-weight: 600;
+  padding: 2px 7px; border-radius: 4px; }
+.frame .cap.ok { color: #2d5a4a; } .frame .cap.bad { color: #9b3a33; } .frame .cap.live { color: #3d2f78; }
+.frame.frozen img { filter: grayscale(.25) brightness(1.08) contrast(.85); }
+.frame .pause { position: absolute; inset: 0; display: grid; place-items: center; font-size: 30px; font-weight: 700; color: rgba(70,75,85,.75); letter-spacing: 3px; }
+.tag { position: absolute; width: 17px; height: 17px; border-radius: 50%; color: #fff; font-size: 10px; font-weight: 700; display: grid; place-items: center;
+  border: 1.5px solid #fff; transform: translate(-50%, -50%); }
+.tag.a { background: #2d5a4a; } .tag.b { background: #94783a; }
+/* tabs + charts */
+.tabs { display: flex; gap: 8px; flex-wrap: wrap; margin: 4px 0 14px; }
+.tabs button { font: 600 14.5px var(--sans); color: var(--ink2); background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 7px 14px; cursor: pointer; }
+.tabs button[aria-selected="true"] { color: var(--accent); border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+.chart { width: 100%; overflow-x: auto; }
+.chart svg { display: block; width: 100%; height: auto; min-width: 560px; }
+.chart text { font-family: var(--sans); }
+.note { font-size: 14.5px; color: var(--ink2); margin: 6px 0 0; max-width: 820px; }
+.legend { display: flex; gap: 18px; flex-wrap: wrap; font-size: 13.5px; color: var(--ink2); margin: 2px 0 6px; }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; vertical-align: -1px; }
+.legend i.open { border: 2px solid var(--paused); background: var(--bg); }
+.legend i.fill { background: var(--live); }
+.lines { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+.lines .panel { min-width: 0; }
+.panel h3 { font-size: 15px; font-weight: 600; margin: 0 0 4px; }
+.panel svg { display: block; width: 100%; height: auto; }
+.llegend { display: flex; flex-wrap: wrap; gap: 2px 12px; font-size: 12.5px; color: var(--ink2); margin: 0 0 4px; min-height: 2.6em; }
+.llegend i { display: inline-block; width: 16px; border-top: 2.5px solid; margin-right: 5px; vertical-align: 3px; }
+/* families */
+.fam { display: grid; grid-template-columns: repeat(2, 1fr); gap: 26px 22px; }
+.fam .card h3 { font-size: 16.5px; font-weight: 600; margin: 0 0 2px; }
+.fam .card p { font-size: 14.5px; color: var(--ink2); margin: 0 0 8px; }
+.chips { display: flex; gap: 6px; flex-wrap: wrap; margin: 6px 0 0; font-size: 12.5px; }
+.chip { padding: 1px 8px; border-radius: 999px; border: 1px solid var(--line); color: var(--ink2); }
+.chip.ok { color: #2d5a4a; border-color: #b9d2c6; } .chip.bad { color: #9b3a33; border-color: #e7c4bf; }
+@media (prefers-color-scheme: dark) { .chip.ok { color: #7cc0a4; border-color: #2f4a3f; } .chip.bad { color: #e48b80; border-color: #5a2e2a; } }
+.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+.stat { border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; background: var(--soft); min-width: 0; }
+.stat .k { font-size: 12.5px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.stat .v { font-size: 30px; font-weight: 700; letter-spacing: -0.02em; color: var(--accent); }
+.stat .d { font-size: 14px; color: var(--ink2); line-height: 1.5; }
+pre { background: var(--soft); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; overflow-x: auto; font-size: 13px; line-height: 1.55; }
+footer { color: var(--muted); font-size: 13.5px; text-align: center; padding: 30px 0 50px; }
+hr.sep { border: 0; border-top: 1px solid var(--line); margin: 26px 0 0; }
+@media (max-width: 760px) {
+  .strip { grid-template-columns: repeat(2, 1fr); } .strip .rowlab { grid-column: 1 / -1; }
+  .frame .cap { font-size: 10.5px; } .authors span, .affil span { margin: 0 6px; }
+  .authors, .affil { display: flex; flex-wrap: wrap; justify-content: center; }
+  .lines { grid-template-columns: 1fr; } .fam { grid-template-columns: 1fr; } .stats { grid-template-columns: 1fr; }
+  .abstract p { text-align: left; }
 }
-.hero-line {
-  font-size: clamp(19px, 2.6vw, 25px); line-height: 1.45; max-width: 760px; margin: 0 auto 30px;
-  color: var(--ink); text-wrap: balance;
-}
-.links { display: flex; justify-content: center; flex-wrap: wrap; gap: 12px; margin-bottom: 8px; }
-.button {
-  display: inline-flex; align-items: center; gap: 8px; padding: 9px 20px; border-radius: 999px;
-  background: var(--soft); color: var(--ink); border: 1px solid var(--line);
-  font-size: 16px; font-weight: 600; line-height: 1.4;
-}
-.button:hover { text-decoration: none; border-color: var(--muted); }
-.button svg { width: 18px; height: 18px; fill: currentColor; }
-.abstract { max-width: 760px; margin: 56px auto 96px; }
-.abstract h2 { font-size: 26px; line-height: 1.25; font-weight: 700; letter-spacing: -0.02em; text-align: center; margin: 0 0 18px; }
-.abstract p { margin: 0; text-align: justify; hyphens: auto; }
-@media (max-width: 560px) { .hero { padding-top: 56px; } .abstract p { text-align: left; } }
 </style>
 </head>
 <body>
-<header class="hero">
+<header class="hero wrap">
   <h1>RoboLiveMem</h1>
   <p class="hero-line">Live Robot Memory When the World Does Not Wait</p>
+  <p class="authors"><span>Yunbei Zhang<sup>1</sup></span><span>Yuyou Zhang<sup>2</sup></span><span>Janet Wang<sup>1</sup></span></p>
+  <p class="affil"><span><sup>1</sup>Tulane University</span><span><sup>2</sup>Carnegie Mellon University</span></p>
   <div class="links">
-    <a class="button" href="https://github.com/RoboLiveMem/RoboLiveMem">
+    <span class="button" aria-disabled="true" title="Code will be released">
       <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
-      Code
-    </a>
+      Code (coming soon)
+    </span>
   </div>
+  <figure class="teaser">
+    <div class="vlabels"><span>Paused: the world waits for the model</span><span>Live: the world keeps running</span></div>
+    <video src="media/mugs.mp4" poster="media/mugs_poster.jpg" autoplay muted loop playsinline preload="auto"></video>
+    <figcaption><b>The same episode, two clocks.</b> Claude Opus 5.5 must put Anna's mug on the tray, and the two mugs look
+    identical. Paused, nothing moves while the model thinks and it succeeds. Live, a person swaps the mugs during its decision
+    (red bar), and the robot delivers Ben's mug. Played at 2× world time.</figcaption>
+  </figure>
 </header>
 
-<main>
-  <section class="abstract" aria-labelledby="abstract-title">
-    <h2 id="abstract-title">Abstract</h2>
-    <p>Robots must remember a world that keeps changing while they think and act. Yet robot-memory evaluation commonly
-    freezes the environment during model inference, leaving the freshness of memory untested. We introduce RoboLiveMem, a
-    benchmark for live memory in agentic robots. RoboLiveMem advances the world during deliberation and evaluates whether
-    agents acquire transient observations, update hidden state, and act using memories that remain valid. The benchmark
-    combines latency-charged RoboMME evaluation, live-native tasks, and household simulations involving object swaps,
-    concealed locations, residual heat, and fleeting instructions. Paired hidden, visible, and static conditions, together
-    with fresh-observation and memory-oracle interventions, distinguish memory failures from execution delays. Experiments
-    with frontier agents reveal that strong paused-world performance can coexist with stale decisions and missed memory
-    updates. A fresh view at action time can leave these failures unresolved when the relevant change is no longer
-    visible. RoboLiveMem provides a controlled testbed for developing embodied agents whose memory keeps pace with a
-    changing world.</p>
-  </section>
-</main>
+<main class="wrap">
+<section class="abstract narrow">
+  <h2 style="text-align:center">Abstract</h2>
+  <p>Robots must remember a world that keeps changing while they think and act. Yet robot-memory evaluation commonly
+  freezes the environment during model inference, leaving the freshness of memory untested. We introduce RoboLiveMem, a
+  benchmark for live memory in agentic robots. RoboLiveMem advances the world during deliberation and evaluates whether
+  agents acquire transient observations, update hidden state, and act using memories that remain valid. The benchmark
+  combines latency-charged RoboMME evaluation, live-native tasks, and household simulations involving object swaps,
+  concealed locations, residual heat, and fleeting instructions. Paired hidden, visible, and static conditions, together
+  with fresh-observation and memory-oracle interventions, distinguish memory failures from execution delays. Experiments
+  with frontier agents reveal that strong paused-world performance can coexist with stale decisions and missed memory
+  updates. A fresh view at action time can leave these failures unresolved when the relevant change is no longer
+  visible. RoboLiveMem provides a controlled testbed for developing embodied agents whose memory keeps pace with a
+  changing world.</p>
+</section>
 
+<hr class="sep">
+
+<section id="setting">
+  <p class="kicker">The setting</p>
+  <h2>Current benchmarks pause the world. Real robots cannot.</h2>
+  <p class="lead">Agentic systems now report 92 to 99% on RoboMME, above the 90.5% human reference. Every one of these
+  results comes from a simulator that stops while the model thinks. In a home, thinking and the world run at the same time,
+  so an answer can come too late and a memory can become false before the robot acts.</p>
+  <div class="strip" aria-label="Paused and live timelines of one episode">
+    <div class="rowlab">Paused world<small>what benchmarks evaluate</small></div>
+    <div class="frame"><img src="img/paused_0.jpg" alt="decision starts"><span class="cap">decides: pick A</span><span class="tag a" style="left:34.4%;top:40%">A</span><span class="tag b" style="left:59.6%;top:42%">B</span></div>
+    <div class="frame frozen"><img src="img/paused_24.jpg" alt="world frozen while thinking"><span class="cap">thinks 3.1 s, world frozen</span><div class="pause">II</div></div>
+    <div class="frame"><img src="img/paused_96.jpg" alt="grasps mug A"><span class="cap">grasps A</span><span class="tag a" style="left:22%;top:58%">A</span><span class="tag b" style="left:59.6%;top:42%">B</span></div>
+    <div class="frame"><img src="img/paused_350.jpg" alt="mug A on the tray"><span class="cap ok">A on the tray: success</span><span class="tag a" style="left:70%;top:60%">A</span><span class="tag b" style="left:56.7%;top:42%">B</span></div>
+    <div class="rowlab" style="color:var(--live)">Live world<small>what RoboLiveMem evaluates</small></div>
+    <div class="frame"><img src="img/live_0.jpg" alt="decision starts"><span class="cap">decides: pick A</span><span class="tag a" style="left:34.4%;top:40%">A</span><span class="tag b" style="left:59.6%;top:42%">B</span></div>
+    <div class="frame"><img src="img/live_24.jpg" alt="a person swaps the mugs"><span class="cap live">thinks 3.5 s, mugs swapped</span></div>
+    <div class="frame"><img src="img/live_96.jpg" alt="grasps mug B"><span class="cap">grasps B</span><span class="tag b" style="left:22%;top:58%">B</span><span class="tag a" style="left:59.6%;top:42%">A</span></div>
+    <div class="frame"><img src="img/live_345.jpg" alt="mug B on the tray"><span class="cap bad">B on the tray: failure</span><span class="tag b" style="left:70%;top:60%">B</span><span class="tag a" style="left:56.7%;top:42%">A</span></div>
+  </div>
+  <figcaption>A is Anna's mug, B is Ben's. Shown the frames of the swap, the model concludes that nothing changed.</figcaption>
+</section>
+
+<section id="results">
+  <p class="kicker">Results</p>
+  <h2>Is robot memory solved? Not when the world keeps running.</h2>
+  <p class="lead">We charge every decision's measured latency to the world and rerun published systems with their own code,
+  frontier agents in our harness, and realistic household scenes.</p>
+  <div class="tabs" role="tablist" id="tabs"></div>
+  <div class="legend"><span><i class="open"></i>paused (the world waits)</span><span><i class="fill"></i>live (the world keeps running)</span></div>
+  <div class="chart" id="dumbbell"></div>
+  <p class="note" id="tabnote"></p>
+</section>
+
+<section id="latency">
+  <p class="kicker">Thinking costs time</p>
+  <h2>Success falls as each decision takes longer</h2>
+  <div class="lines">
+    <div class="panel"><h3>Published systems on RoboMME</h3><div id="l1"></div></div>
+    <div class="panel"><h3>Frontier agents, 66-episode split</h3><div id="l2"></div></div>
+    <div class="panel"><h3>Household scenes, GPT-6 Astra</h3><div id="l3"></div></div>
+  </div>
+  <p class="note">Fixed latency charged per decision (x axis). Systems that make more calls per episode fall faster. In the
+  household scenes the visible twin never drops, while the hidden swap collapses once the frames of a long decision are too
+  sparse to read.</p>
+</section>
+
+<section id="families">
+  <p class="kicker">Benchmark</p>
+  <h2>Realistic household scenes where memory goes stale</h2>
+  <p class="lead">Part H builds kitchen scenes in the MuJoCo simulator of Embodied Safety Exam. A person changes something
+  while the robot thinks, and the change is hidden when the robot acts. Each family has a visible twin and a static control.</p>
+  <figure><img src="img/fig_home.png" alt="Five household families at four moments" style="width:100%;border-radius:10px"></figure>
+  <h3 style="font-size:18px;margin:28px 0 12px">Paused and live, side by side (Claude Opus 5.5)</h3>
+  <div class="fam">
+    <div class="card"><h3>Covered dishes</h3><p>While the robot carries the salt jar, the two identical covered dishes are swapped.</p>
+      <video src="media/dishes.mp4" poster="media/dishes_poster.jpg" muted loop playsinline preload="none" controls></video>
+      <div class="chips"><span class="chip ok">paused: success</span><span class="chip bad">live: lifts the wrong cover</span></div></div>
+    <div class="card"><h3>Knife put away</h3><p>While the robot thinks, the cook hides the knife under one of two identical covers.</p>
+      <video src="media/knife.mp4" poster="media/knife_poster.jpg" muted loop playsinline preload="none" controls></video>
+      <div class="chips"><span class="chip ok">paused: success</span><span class="chip ok">live: reads the frames, success</span></div></div>
+    <div class="card"><h3>Residual heat</h3><p>While the robot carries a plastic bowl, the hot plate is switched on and off.</p>
+      <video src="media/heat.mp4" poster="media/heat_poster.jpg" muted loop playsinline preload="none" controls></video>
+      <div class="chips"><span class="chip ok">paused: success</span><span class="chip">live: repaired after the bowl lands on the hot plate</span></div></div>
+    <div class="card"><h3>Shown jar</h3><p>The cook points at one of three identical jars, once, for one second.</p>
+      <video src="media/jar.mp4" poster="media/jar_poster.jpg" muted loop playsinline preload="none" controls></video>
+      <div class="chips"><span class="chip ok">paused: success</span><span class="chip ok">live: success with frames, 0/10 without</span></div></div>
+  </div>
+  <h3 style="font-size:18px;margin:30px 0 8px">The same swap, two models (both live)</h3>
+  <div class="vlabels"><span style="color:var(--c3)">GPT-6 Astra: recognizes the swap and repairs</span><span style="color:var(--drop)">Claude Opus 5.5: "no swap", delivers Ben's mug</span></div>
+  <video src="media/mugs_astra_vs_opus.mp4" poster="media/mugs_astra_vs_opus_poster.jpg" muted loop playsinline preload="none" controls></video>
+</section>
+
+<section id="glance">
+  <p class="kicker">At a glance</p>
+  <h2>RoboLiveMem</h2>
+  <div class="stats">
+    <div class="stat"><div class="k">Part R</div><div class="v">800</div><div class="d">RoboMME test episodes under a running clock. Published systems run with their own code.</div></div>
+    <div class="stat"><div class="k">Part N</div><div class="v">392</div><div class="d">Live-native tasks whose events happen while the robot works, such as containers that swap during a decision.</div></div>
+    <div class="stat"><div class="k">Part H</div><div class="v">150</div><div class="d">Household scenes in five families, each with a hidden member, a visible twin and a static control.</div></div>
+  </div>
+  <p class="note" style="margin-top:14px">Controls that separate memory from execution: a visible twin, a static version, a free fresh look at
+  action time (repairs execution, not memory) and a memory oracle (repairs memory).</p>
+</section>
+
+<section id="cite">
+  <p class="kicker">Citation</p>
+<pre>@misc{zhang2026robolivemem,
+  title  = {RoboLiveMem: Live Robot Memory When the World Does Not Wait},
+  author = {Zhang, Yunbei and Zhang, Yuyou and Wang, Janet},
+  year   = {2026},
+  url    = {https://robolivemem.github.io}
+}</pre>
+</section>
+</main>
+<footer>RoboLiveMem · 2026</footer>
+
+<script>
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const NS = "http://www.w3.org/2000/svg";
+function el(tag, attrs, parent, text) { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (text !== undefined) e.textContent = text; if (parent) parent.appendChild(e); return e; }
+
+/* ---------- dumbbell tabs ---------- */
+const TABS = [
+  { id: "pub", label: "Published systems", human: true,
+    note: "Run with their own code and model (GPT-6 Astra) on all 800 RoboMME test episodes. MEMI Astra-Plan stays high because it reads objects as text from the simulator. When it must perceive them from the camera, it falls like the others.",
+    rows: [["Embodied-Astra", 93, 29], ["MEMI Astra-Act", 97, 47], ["MEMI Astra-Plan", 99, 92], ["MEMI Astra-Plan, from camera", 94.7, 30.5]] },
+  { id: "agents", label: "Frontier agents", human: false,
+    note: "Our harness on all 1,087 RoboMME and live-native instances. The paused ranking is not the live ranking: with high-effort thinking, Opus beats Astra when the world waits and loses to it when the world runs.",
+    rows: [["Claude Opus 5.5", 88.5, 70.6], ["Claude Opus 5.5, high thinking", 90.2, 71.4], ["GPT-6 Astra", 87.8, 77.6], ["GPT-6 Astra, medium", 88.6, 77.6], ["GPT-6.1 Sol", 82.7, 73.3], ["Claude Sonnet 5.5", 72.8, 62.4], ["Kimi K3", 42.2, 38.0]] },
+  { id: "mug", label: "Household: hidden swap", human: false,
+    note: "Two identical mugs are swapped while the agent thinks (Anna's mug, 30 seeds). Every model succeeds in every paused episode. The fastest model, GPT-6 Luna, solves none live. When the same swap is visible (a red mug), live success stays at 87 to 100%.",
+    rows: [["GPT-6 Astra", 100, 90], ["GPT-6.1 Sol", 100, 73.3], ["Claude Opus 5.5, thinking", 100, 30], ["Claude Opus 5.5", 100, 26.7], ["GPT-6 Luna", 100, 0], ["Claude Haiku 5.5", 100, 0]] },
+  { id: "controls", label: "Household: controls", human: false,
+    note: "All five families, 10 seeds each (successes of 50, as %). The visible twin and the static control lose almost nothing live, so latency alone is not the problem. The hidden member drops for every model.",
+    groups: [["GPT-6 Astra", [["hidden change", 100, 86], ["visible twin", 100, 96], ["static", 100, 100]]],
+             ["Claude Opus 5.5", [["hidden change", 96, 72], ["visible twin", 96, 98], ["static", 94, 100]]],
+             ["GPT-6 Luna", [["hidden change", 96, 60], ["visible twin", 94, 96], ["static", 96, 98]]],
+             ["Claude Haiku 5.5", [["hidden change", 80, 56], ["visible twin", 84, 100], ["static", 82, 78]]]] },
+];
+function drawDumbbell(tab) {
+  const host = document.getElementById("dumbbell"); host.innerHTML = "";
+  let rows = [];
+  if (tab.groups) tab.groups.forEach(([g, rs]) => { rows.push({ head: g }); rs.forEach(r => rows.push({ name: r[0], p: r[1], l: r[2] })); });
+  else rows = tab.rows.map(r => ({ name: r[0], p: r[1], l: r[2] }));
+  const W = 1000, rowH = 34, top = 34, left = 290, right = 90, H = top + rows.length * rowH + 30;
+  const X = v => left + v / 100 * (W - left - right);
+  const svg = el("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": tab.label }, host);
+  [0, 25, 50, 75, 100].forEach(t => { el("line", { x1: X(t), x2: X(t), y1: top - 12, y2: H - 26, stroke: css("--grid"), "stroke-width": 1 }, svg);
+    el("text", { x: X(t), y: H - 8, "text-anchor": "middle", "font-size": 13, fill: css("--muted") }, svg, t); });
+  if (tab.human) { el("line", { x1: X(90.5), x2: X(90.5), y1: top - 12, y2: top + rows.length * rowH - 8, stroke: css("--muted"), "stroke-dasharray": "4 4", "stroke-width": 1 }, svg);
+    el("text", { x: X(90.5), y: top - 16, "text-anchor": "middle", "font-size": 12.5, fill: css("--muted") }, svg, "Human 90.5"); }
+  rows.forEach((r, i) => {
+    const y = top + i * rowH + rowH / 2;
+    if (r.head) { el("text", { x: 8, y: y + 5, "font-size": 15, "font-weight": 600, fill: css("--ink") }, svg, r.head); return; }
+    el("text", { x: left - 18, y: y + 5, "text-anchor": "end", "font-size": 15, fill: css("--ink2") }, svg, r.name);
+    el("line", { x1: X(r.l), x2: X(r.p), y1: y, y2: y, stroke: css("--link"), "stroke-width": 3, "stroke-linecap": "round" }, svg);
+    const pc = el("circle", { cx: X(r.p), cy: y, r: 7, fill: css("--bg"), stroke: css("--paused"), "stroke-width": 2.4 }, svg);
+    el("title", {}, pc, `paused ${r.p}%`);
+    const lc = el("circle", { cx: X(r.l), cy: y, r: 7, fill: css("--live") }, svg);
+    el("title", {}, lc, `live ${r.l}%`);
+    const d = Math.round(r.l - r.p);
+    el("text", { x: W - right + 22, y: y + 5, "font-size": 15, "font-weight": Math.abs(d) >= 30 ? 700 : 500,
+      fill: d < -2 ? css("--drop") : css("--muted") }, svg, d < 0 ? "−" + Math.abs(d) : (d > 0 ? "+" + d : "±0"));
+  });
+  document.getElementById("tabnote").textContent = tab.note;
+}
+(function () {
+  const bar = document.getElementById("tabs");
+  TABS.forEach((t, i) => { const b = document.createElement("button"); b.type = "button"; b.textContent = t.label; b.setAttribute("role", "tab");
+    b.setAttribute("aria-selected", i === 0 ? "true" : "false");
+    b.addEventListener("click", () => { [...bar.children].forEach(x => x.setAttribute("aria-selected", "false")); b.setAttribute("aria-selected", "true"); cur = t; drawDumbbell(t); });
+    bar.appendChild(b); });
+  let cur = TABS[0]; drawDumbbell(cur);
+  window._redrawDumbbell = () => drawDumbbell(cur);
+})();
+
+/* ---------- line charts ---------- */
+function lineChart(id, series, opts) {
+  const host = document.getElementById(id); host.innerHTML = "";
+  const lg = document.createElement("div"); lg.className = "llegend";
+  series.forEach(s => { const sp = document.createElement("span"); const sw = document.createElement("i");
+    sw.style.borderTopColor = css(s.color); if (s.dash) sw.style.borderTopStyle = "dashed"; sp.appendChild(sw); sp.append(s.name); lg.appendChild(sp); });
+  host.appendChild(lg);
+  const W = 320, H = 230, l = 38, r = 12, t = 12, b = 40;
+  const X = v => l + (v - opts.x0) / (opts.x1 - opts.x0) * (W - l - r), Y = v => t + (1 - v / 100) * (H - t - b);
+  const svg = el("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": opts.label }, host);
+  [0, 25, 50, 75, 100].forEach(v => { el("line", { x1: l, x2: W - r, y1: Y(v), y2: Y(v), stroke: css("--grid") }, svg);
+    el("text", { x: l - 7, y: Y(v) + 4, "text-anchor": "end", "font-size": 11, fill: css("--muted") }, svg, v); });
+  opts.xt.forEach(v => el("text", { x: X(v), y: H - b + 16, "text-anchor": "middle", "font-size": 11, fill: css("--muted") }, svg, v));
+  el("text", { x: (l + W - r) / 2, y: H - 6, "text-anchor": "middle", "font-size": 11.5, fill: css("--muted") }, svg, opts.xlabel);
+  series.forEach(s => {
+    const pts = s.pts.map(([x, y]) => `${X(x)},${Y(y)}`).join(" ");
+    el("polyline", { points: pts, fill: "none", stroke: css(s.color), "stroke-width": 2.4, "stroke-dasharray": s.dash || "none", "stroke-linejoin": "round" }, svg);
+    s.pts.forEach(([x, y]) => { const c = el("circle", { cx: X(x), cy: Y(y), r: 3.6, fill: s.hollow ? css("--bg") : css(s.color), stroke: css(s.color), "stroke-width": 2 }, svg);
+      el("title", {}, c, `${s.name}: ${y}% at ${x} s`); });
+    if (false) el("text", { x: X(s.lab[0]), y: Y(s.lab[1]), "font-size": 11.5, "font-weight": 600, fill: css(s.color), "text-anchor": s.lab[2] || "start" }, svg, s.name);
+  });
+}
+function drawLines() {
+  lineChart("l1", [
+    { name: "Embodied-Astra", color: "--c4", pts: [[0, 93], [2, 84], [5, 63], [10, 27]], lab: [5.6, 52] },
+    { name: "MEMI Astra-Act", color: "--c2", pts: [[0, 98], [2, 82], [5, 58], [10, 15]], lab: [10, 7, "end"] },
+    { name: "MEMI Astra-Plan", color: "--c1", pts: [[0, 99], [2, 92], [5, 84], [10, 69]], lab: [10, 80, "end"] },
+  ], { x0: 0, x1: 10, xt: [0, 2, 5, 10], xlabel: "seconds per decision", label: "Published systems vs latency" });
+  lineChart("l2", [
+    { name: "Claude Opus 5.5", color: "--c4", pts: [[0, 86], [4.6, 70], [10, 62], [20, 35]], lab: [20, 26, "end"] },
+    { name: "GPT-6 Astra", color: "--c1", pts: [[0, 89], [3.3, 76], [10, 62], [20, 38]], lab: [20, 50, "end"] },
+  ], { x0: 0, x1: 20, xt: [0, 5, 10, 15, 20], xlabel: "seconds per decision (live at 3.3 and 4.6 s)", label: "Frontier agents vs latency" });
+  lineChart("l3", [
+    { name: "visible twin", color: "--paused", dash: "5 4", pts: [[2, 100], [4, 100], [8, 100], [16, 100]], lab: [16, 92, "end"] },
+    { name: "hidden change", color: "--c1", pts: [[2, 95], [4, 95], [8, 100], [16, 60]], lab: [16, 70, "end"] },
+    { name: "Anna's mug, hidden", color: "--c4", pts: [[2, 80], [4, 80], [8, 100], [16, 0]], lab: [10.5, 18, "start"] },
+  ], { x0: 0, x1: 16, xt: [0, 2, 4, 8, 16], xlabel: "seconds per decision (5 seeds per family)", label: "Household scenes vs latency" });
+}
+drawLines();
+if (window.matchMedia) matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => { window._redrawDumbbell(); drawLines(); });
+
+/* ---------- play videos when visible ---------- */
+const io = new IntersectionObserver(es => es.forEach(e => { const v = e.target;
+  if (e.isIntersecting) { if (v.preload === "none") v.preload = "auto"; v.play().catch(() => {}); } else v.pause(); }), { threshold: 0.35 });
+document.querySelectorAll("video").forEach(v => io.observe(v));
+</script>
 </body>
 </html>
