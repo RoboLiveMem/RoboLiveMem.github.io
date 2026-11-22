@@ -470,23 +470,35 @@ footer .tick { display: block; height: 10px; max-width: 240px; margin: 0 auto 16
 <section class="gut" id="code">
   <div class="wrap">
     <p class="kick">07 · Code</p>
-    <h2>Try the protocol in a minute, then bring your own model</h2>
+    <h2>Bring your model, your harness or your own agent</h2>
     <div class="codegrid">
       <div>
-        <p>The package holds the clocks, the commit check, the decomposition with paired bootstrap intervals and one chat
-        interface for OpenAI, Anthropic, Gemini, Amazon Bedrock and any OpenAI-compatible server, with keys read from
-        environment variables. A small 2-D version of Grandpa's mug runs anywhere; the three simulator tiers of the paper
-        are in <code>tiers/</code>.</p>
-        <p><a href="https://github.com/RoboLiveMem/RoboLiveMem">github.com/RoboLiveMem/RoboLiveMem</a></p>
+        <p>Every tier runs as an environment server with one protocol. The agent receives instructions, text and camera
+        frames and answers with one command, and under the live clock the world keeps moving for as long as it thinks.
+        The agent can be a bare model behind our reference harness, a model inside Claude Code, Codex or any MCP client,
+        or your own system. The evaluation runs the paper's episodes and prints per-task and per-tier tables:
+        paused, live, no change, the live drop and the memory term.</p>
+        <p>Results are reported as model + harness, with the latency source, because the harness changes both what the
+        model sees and how long a decision takes. The simulators and their assets (BEHAVIOR-1K, MuJoCo, ManiSkill) are
+        hosted by you; the repository holds the scenarios, servers and evaluation, plus a small 2-D tier that needs
+        nothing.</p>
+        <p><a href="https://github.com/RoboLiveMem/RoboLiveMem">github.com/RoboLiveMem/RoboLiveMem</a> ·
+        <a href="https://github.com/RoboLiveMem/RoboLiveMem/blob/main/PROTOCOL.md">the protocol</a></p>
       </div>
 <pre><span class="c"># no GPU, no simulator, no key</span>
 git clone https://github.com/RoboLiveMem/RoboLiveMem.git
 cd RoboLiveMem && pip install -e .
 python -m robolivemem
 
-<span class="c"># your model (keys from .env.example)</span>
-python -m robolivemem --model anthropic:claude-haiku-5-5
-python -m robolivemem --model openai:&lt;model&gt; --commit</pre>
+<span class="c"># evaluate an agent on a tier</span>
+python -m robolivemem.serve --port 8800 &amp;
+python -m robolivemem.eval --tier tabletop \
+  --env http://127.0.0.1:8800 \
+  --agent chat:anthropic:claude-haiku-5-5 \
+  --out results/run.jsonl
+
+<span class="c"># or: --agent my_agent.py:MyAgent</span>
+<span class="c">#     --agent "cmd:&lt;your harness&gt;"</span></pre>
     </div>
   </div>
 </section>
