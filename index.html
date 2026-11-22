@@ -1,0 +1,678 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>RoboLiveMem</title>
+<meta name="description" content="RoboLiveMem: Is Robot Memory Solved When the World Does Not Wait? A benchmark that runs the same robot memory tasks with the world paused and with the world running.">
+<meta property="og:title" content="RoboLiveMem: Is Robot Memory Solved When the World Does Not Wait?">
+<meta property="og:description" content="Frontier models succeed in 97% of changing episodes when the world waits for them, and in 50% when it keeps moving.">
+<meta property="og:image" content="https://robolivemem.github.io/img/teaser.jpg">
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400;1,6..72,500;1,6..72,600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+:root {
+  --bg: #fbfafd; --band: #f4f1fb; --card: #ffffff; --ink: #1e1a2b; --ink2: #463f5a; --muted: #6e6882; --line: #e4def5;
+  --accent: #4b3f8a; --live: #6a55b4; --live-soft: #e4def5; --paused: #aaa4ba; --drop: #c2413b; --amber: #a8781c;
+  --ok: #2f8a66; --grid: #ece8f5; --figbg: #ffffff; --glow: rgba(117, 99, 171, .16);
+  --sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+  --serif: "Newsreader", "Source Serif 4", Georgia, "Times New Roman", serif;
+  --mono: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #121019; --band: #1a1724; --card: #1d1a28; --ink: #ece9f5; --ink2: #c9c3db; --muted: #9690ab; --line: #2e2942;
+    --accent: #c0b5f2; --live: #a08fe6; --live-soft: #2c2645; --paused: #6e6982; --drop: #f07a70; --amber: #d9a84a;
+    --ok: #6cc9a1; --grid: #262236; --figbg: #f7f6fa; --glow: rgba(160, 143, 230, .14);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #121019; --band: #1a1724; --card: #1d1a28; --ink: #ece9f5; --ink2: #c9c3db; --muted: #9690ab; --line: #2e2942;
+  --accent: #c0b5f2; --live: #a08fe6; --live-soft: #2c2645; --paused: #6e6982; --drop: #f07a70; --amber: #d9a84a;
+  --ok: #6cc9a1; --grid: #262236; --figbg: #f7f6fa; --glow: rgba(160, 143, 230, .14);
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 16.5px/1.68 var(--sans); }
+.gut { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; text-underline-offset: 3px; }
+.wrap { max-width: 1040px; margin: 0 auto; }
+.narrow { max-width: 760px; margin: 0 auto; }
+img, video { max-width: 100%; display: block; }
+
+/* ---------------- hero */
+.hero { position: relative; overflow: hidden; padding-block: 84px 18px; text-align: center;
+  background: radial-gradient(1100px 420px at 50% -60px, var(--glow), transparent 70%); }
+.eyebrow { font: 500 12.5px/1 var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); margin: 0 0 22px; }
+h1 { font: 500 clamp(52px, 9vw, 96px)/.98 var(--serif); letter-spacing: -0.025em; margin: 0; color: var(--ink); }
+h1 em { font-style: italic; color: var(--live); font-weight: 500; position: relative; padding: 0 .02em; }
+h1 em::after { content: ""; position: absolute; left: 4%; right: 2%; bottom: .06em; height: .07em; border-radius: 9px;
+  background: repeating-linear-gradient(90deg, var(--live) 0 2px, transparent 2px 9px); opacity: .55;
+  animation: tape 1.6s linear infinite; }
+@keyframes tape { to { background-position: 18px 0; } }
+.sub { font: italic 400 clamp(21px, 2.9vw, 30px)/1.3 var(--serif); color: var(--ink2); margin: 18px auto 30px; max-width: 760px; text-wrap: balance; }
+.authors { font-size: 17px; font-weight: 500; margin: 0 auto 4px; max-width: 900px; display: flex; flex-wrap: wrap; justify-content: center; gap: 2px 20px; }
+.authors span { white-space: nowrap; }
+sup { font-size: .66em; font-weight: 500; color: var(--muted); margin-left: 1px; }
+.affil { color: var(--muted); font-size: 15.5px; margin: 6px 0 2px; display: flex; flex-wrap: wrap; justify-content: center; gap: 2px 18px; }
+.notes { color: var(--muted); font-size: 13.5px; margin: 2px 0 24px; }
+.links { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
+.pill { display: inline-flex; align-items: center; gap: 8px; padding: 9px 18px; border-radius: 999px; font: 600 14.5px/1 var(--sans);
+  border: 1px solid var(--line); background: var(--card); color: var(--ink); }
+.pill:hover { text-decoration: none; border-color: var(--live); }
+.pill.primary { background: var(--accent); border-color: var(--accent); color: var(--bg); }
+.pill.off { color: var(--muted); cursor: default; }
+.pill svg { width: 16px; height: 16px; fill: currentColor; }
+
+/* the two clocks */
+.clocks { margin: 44px auto 8px; max-width: 860px; display: grid; gap: 14px; text-align: left; }
+.trk { display: grid; grid-template-columns: 84px 1fr; align-items: center; gap: 12px; }
+.trk .lab { font: 500 12.5px/1.2 var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.trk.live .lab { color: var(--live); }
+.lane { position: relative; height: 70px; border-radius: 12px; background: var(--card); border: 1px solid var(--line); overflow: hidden; }
+.tape { position: absolute; left: 0; right: 0; bottom: 13px; height: 12px; opacity: .75;
+  background: repeating-linear-gradient(90deg, var(--paused) 0 1.5px, transparent 1.5px 12px); background-size: 120px 100%; }
+.trk.live .tape { background-image: repeating-linear-gradient(90deg, var(--live) 0 1.5px, transparent 1.5px 12px); }
+.trk.paused .tape { animation: tapePaused 8s linear infinite; }
+.trk.live .tape { animation: tapeLive 8s linear infinite; }
+@keyframes tapeLive { from { background-position: 0 0; } to { background-position: -240px 0; } }
+@keyframes tapePaused { 0% { background-position: 0 0; } 28% { background-position: -84px 0; } 66% { background-position: -84px 0; } 100% { background-position: -132px 0; } }
+.think { position: absolute; left: 22%; width: 34%; top: 12px; height: 26px; border-radius: 999px; display: grid; place-items: center;
+  font: 500 12px/1 var(--mono); letter-spacing: .04em; opacity: 0; animation: think 8s ease-in-out infinite; }
+.trk.paused .think { background: var(--band); color: var(--muted); border: 1px dashed var(--paused); }
+.trk.live .think { background: var(--live); color: var(--bg); }
+@keyframes think { 0%, 26% { opacity: 0; } 30%, 64% { opacity: 1; } 68%, 100% { opacity: 0; } }
+.mugs { position: absolute; left: 64%; right: 4%; top: 8px; height: 40px; }
+.mug { position: absolute; top: 10px; width: 18px; height: 20px; border-radius: 3px 3px 5px 5px; background: var(--paused); }
+.mug::after { content: ""; position: absolute; right: -6px; top: 4px; width: 6px; height: 9px; border: 2px solid var(--paused); border-left: 0; border-radius: 0 6px 6px 0; }
+.mug.g { background: var(--live); } .mug.g::after { border-color: var(--live); }
+.m1 { left: 8%; } .m2 { left: 42%; } .m3 { left: 76%; }
+.trk.live .mug.g { animation: swapA 8s ease-in-out infinite; }
+.trk.live .mug.m2 { animation: swapB 8s ease-in-out infinite; }
+@keyframes swapA { 0%, 36% { left: 8%; top: 10px; } 42% { left: 8%; top: -2px; } 54% { left: 42%; top: -2px; } 60%, 100% { left: 42%; top: 10px; } }
+@keyframes swapB { 0%, 40% { left: 42%; top: 10px; } 46% { left: 42%; top: 20px; } 56% { left: 8%; top: 20px; } 62%, 100% { left: 8%; top: 10px; } }
+.grab { position: absolute; top: -44px; left: calc(8% + 1px); width: 16px; height: 22px; border: 2.5px solid var(--ink2); border-top: 0;
+  border-radius: 0 0 4px 4px; animation: grab 8s ease-in-out infinite; }
+@keyframes grab { 0%, 70% { transform: translateY(0); } 78%, 92% { transform: translateY(48px); } 100% { transform: translateY(0); } }
+.verdict { position: absolute; right: 12px; top: 8px; font: 600 12px/1 var(--mono); opacity: 0; animation: verdict 8s ease infinite; }
+.trk.paused .verdict { color: var(--ok); } .trk.live .verdict { color: var(--drop); }
+@keyframes verdict { 0%, 78% { opacity: 0; } 84%, 96% { opacity: 1; } 100% { opacity: 0; } }
+.cap0 { font-size: 14px; color: var(--muted); margin: 10px auto 0; max-width: 760px; text-wrap: balance; }
+@media (prefers-reduced-motion: reduce) {
+  .tape, .think, .mug, .grab, .verdict, h1 em::after { animation: none !important; }
+  .think, .verdict { opacity: 1; }
+  .trk.live .mug.g { left: 42%; } .trk.live .mug.m2 { left: 8%; }
+}
+
+/* ---------------- sections */
+section { padding-block: 64px 8px; }
+.band { background: var(--band); border-block: 1px solid var(--line); margin-top: 64px; padding-block: 56px 48px; }
+.band section { padding-block: 0; }
+.kick { display: flex; align-items: center; gap: 12px; font: 500 12.5px/1 var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--live); margin: 0 0 14px; }
+.kick::after { content: ""; flex: 1; height: 1px; background: repeating-linear-gradient(90deg, var(--line) 0 6px, transparent 6px 10px); }
+h2 { font: 500 clamp(28px, 3.6vw, 38px)/1.15 var(--serif); letter-spacing: -0.01em; margin: 0 0 14px; text-wrap: balance; }
+h2 em { color: var(--live); }
+h3 { font: 600 17px/1.35 var(--sans); margin: 0 0 6px; }
+.lead { color: var(--ink2); max-width: 760px; margin: 0 0 26px; font-size: 17px; }
+.abstract p { font: 400 19.5px/1.66 var(--serif); color: var(--ink); margin: 0; hyphens: auto; }
+.abstract p::first-letter { font-size: 3.1em; float: left; line-height: .9; padding: 6px 8px 0 0; color: var(--live); font-style: italic; }
+figure { margin: 0; }
+figcaption { color: var(--muted); font-size: 14.5px; line-height: 1.6; margin-top: 10px; max-width: 900px; }
+figcaption b { color: var(--ink); font-weight: 600; }
+.paper { background: var(--figbg); border: 1px solid var(--line); border-radius: 14px; padding: 14px; }
+.teaser video { width: 100%; border-radius: 12px; background: #000; aspect-ratio: 1920 / 1250; }
+
+/* conditions + tiers */
+.conds { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 8px 0 0; }
+.cond { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; min-width: 0; }
+.cond b { display: block; font: 500 12px/1.2 var(--mono); color: var(--live); letter-spacing: .04em; margin-bottom: 4px; }
+.cond span { font-size: 14px; color: var(--ink2); line-height: 1.45; display: block; }
+.pvl { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 26px 0 8px; }
+.pv { border-radius: 14px; padding: 16px 18px; background: var(--card); border: 1px solid var(--line); min-width: 0; }
+.pv .k { font: 600 30px/1 var(--serif); color: var(--live); }
+.pv .k small { font: 500 12px/1 var(--mono); color: var(--muted); letter-spacing: .08em; text-transform: uppercase; margin-left: 8px; vertical-align: 6px; }
+.pv p { margin: 8px 0 0; font-size: 15px; color: var(--ink2); line-height: 1.5; }
+.eq { margin: 18px 0 0; padding: 16px 18px; border-left: 3px solid var(--live); background: var(--card); border-radius: 0 12px 12px 0;
+  font: 400 19px/1.6 var(--serif); overflow-x: auto; }
+.eq i { color: var(--muted); font-size: .8em; }
+.stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 0 0 26px; }
+.stat { border-top: 2px solid var(--live); padding-top: 10px; min-width: 0; }
+.stat .v { font: 500 clamp(30px, 4vw, 44px)/1 var(--serif); color: var(--ink); }
+.stat .d { font-size: 14px; color: var(--muted); margin-top: 6px; }
+.tiers { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 22px; }
+.tier { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 16px 18px; min-width: 0; }
+.tier .t { font: 500 12px/1 var(--mono); letter-spacing: .1em; text-transform: uppercase; }
+.tier.r .t { color: var(--live); } .tier.s .t { color: var(--amber); } .tier.c .t { color: var(--muted); }
+.tier h3 { font: 500 21px/1.25 var(--serif); margin: 8px 0 6px; }
+.tier p { margin: 0; font-size: 14.5px; color: var(--ink2); line-height: 1.55; }
+.tier .nums { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+.chip { font: 500 12px/1 var(--mono); padding: 6px 9px; border-radius: 999px; background: var(--live-soft); color: var(--accent); }
+
+/* results chart */
+.tabs { display: flex; gap: 8px; flex-wrap: wrap; margin: 4px 0 12px; }
+.tabs button { font: 600 14px var(--sans); color: var(--ink2); background: var(--card); border: 1px solid var(--line); border-radius: 999px; padding: 8px 16px; cursor: pointer; }
+.tabs button[aria-selected="true"] { color: var(--bg); background: var(--accent); border-color: var(--accent); }
+.tabs button:focus-visible { outline: 2px solid var(--live); outline-offset: 2px; }
+.legend { display: flex; gap: 18px; flex-wrap: wrap; font-size: 13.5px; color: var(--ink2); margin: 0 0 6px; }
+.legend i { display: inline-block; width: 11px; height: 11px; border-radius: 50%; margin-right: 6px; vertical-align: -1px; }
+.legend i.o { border: 2px solid var(--paused); background: var(--card); }
+.legend i.f { background: var(--live); }
+.legend i.r { border-radius: 2px; width: 14px; height: 3px; background: var(--drop); vertical-align: 3px; }
+.chart { width: 100%; overflow-x: auto; background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 8px 6px 2px; }
+.chart svg { display: block; width: 100%; height: auto; min-width: 600px; }
+.chart text { font-family: var(--sans); }
+.note { font-size: 14.5px; color: var(--ink2); margin: 10px 0 0; max-width: 860px; }
+
+/* findings */
+.finds { display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px; }
+.find { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 20px 20px 16px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.find.wide { grid-column: 1 / -1; }
+.find .n { font: 500 12px/1 var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--live); }
+.find h3 { font: 500 23px/1.22 var(--serif); margin: 0; }
+.find .big { font: 500 clamp(34px, 4.6vw, 46px)/1 var(--serif); color: var(--ink); letter-spacing: -0.01em; }
+.find .big .arrow { color: var(--muted); font-size: .7em; margin: 0 .15em; }
+.find .big .dn { color: var(--drop); }
+.find .big .up { color: var(--ok); }
+.find p { margin: 0; font-size: 15px; color: var(--ink2); line-height: 1.55; }
+.find img { border-radius: 10px; background: var(--figbg); padding: 8px; border: 1px solid var(--line); margin-top: auto; }
+
+/* videos */
+.vids { display: grid; grid-template-columns: repeat(2, 1fr); gap: 22px 18px; }
+.vid { min-width: 0; }
+.vid video { width: 100%; border-radius: 12px; background: #000; aspect-ratio: 1920 / 1250; }
+.vid.wide video { aspect-ratio: 2000 / 880; }
+.vid h3 { font: 500 19px/1.3 var(--serif); margin: 10px 0 4px; }
+.vid p { font-size: 14.5px; color: var(--ink2); margin: 0 0 8px; line-height: 1.55; }
+.tags { display: flex; gap: 6px; flex-wrap: wrap; }
+.tag { font: 500 12px/1 var(--mono); padding: 5px 9px; border-radius: 999px; border: 1px solid var(--line); color: var(--ink2); }
+.tag.ok { color: var(--ok); border-color: color-mix(in srgb, var(--ok) 40%, transparent); }
+.tag.bad { color: var(--drop); border-color: color-mix(in srgb, var(--drop) 40%, transparent); }
+
+/* code + cite */
+pre { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; overflow-x: auto;
+  font: 400 13.5px/1.6 var(--mono); color: var(--ink); margin: 0; }
+pre .c { color: var(--muted); }
+.codegrid { display: grid; grid-template-columns: 1.1fr .9fr; gap: 18px; align-items: start; }
+.codegrid p { margin: 0 0 12px; color: var(--ink2); font-size: 15.5px; }
+.copy { float: right; font: 500 12px/1 var(--mono); background: var(--band); color: var(--ink2); border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; cursor: pointer; }
+footer { color: var(--muted); font-size: 13.5px; text-align: center; padding-block: 56px 64px; }
+footer .tick { display: block; height: 10px; max-width: 240px; margin: 0 auto 16px; opacity: .6;
+  background: repeating-linear-gradient(90deg, var(--live) 0 1.5px, transparent 1.5px 12px); }
+
+@media (max-width: 860px) {
+  .conds { grid-template-columns: repeat(2, 1fr); }
+  .tiers, .pvl { grid-template-columns: 1fr; }
+  .finds, .vids, .codegrid { grid-template-columns: 1fr; }
+  .stats { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 520px) {
+  .hero { padding-block: 56px 10px; }
+  .trk { grid-template-columns: 1fr; gap: 4px; }
+  .think { font-size: 10.5px; }
+  .abstract p { font-size: 18px; }
+}
+</style>
+</head>
+<body>
+
+<header class="hero gut">
+  <div class="wrap">
+    <p class="eyebrow">A live-clock benchmark for robot memory</p>
+    <h1>Robo<em>Live</em>Mem</h1>
+    <p class="sub">Is robot memory solved when the world does not wait?</p>
+    <div class="authors">
+      <span>Yunbei Zhang<sup>1,†,*</sup></span><span>Yuyou Zhang<sup>2,†</sup></span><span>Janet Wang<sup>1,†</sup></span>
+      <span>Ming Liu<sup>3</sup></span><span>Yijiang Li<sup>4</sup></span><span>Yikai Wang<sup>2</sup></span>
+      <span>Weirui Ye<sup>5</sup></span><span>Ding Zhao<sup>2,*</sup></span><span>Jihun Hamm<sup>1,*</sup></span>
+    </div>
+    <div class="affil"><span><sup>1</sup>Tulane</span><span><sup>2</sup>CMU</span><span><sup>3</sup>Amazon</span><span><sup>4</sup>UCSD</span><span><sup>5</sup>MIT</span></div>
+    <p class="notes"><sup>†</sup>Equal contribution &nbsp;&nbsp; <sup>*</sup>Co-corresponding authors</p>
+    <div class="links">
+      <span class="pill off" title="The preprint will be linked here">
+        <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 1h7l3 3v11H3V1zm6.5 1H4v12h8V4.5H9.5V2zM5.5 7h5v1h-5V7zm0 2h5v1h-5V9zm0 2h3.5v1H5.5v-1z"/></svg>Paper (arXiv, soon)</span>
+      <a class="pill primary" href="https://github.com/RoboLiveMem/RoboLiveMem">
+        <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>Code</a>
+      <a class="pill" href="#videos">
+        <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 3h9v10H2V3zm10 3.5 3-2v7l-3-2v-3z"/></svg>Videos</a>
+      <a class="pill" href="#cite">
+        <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 3h4v4H5c0 1.5.7 2.5 2 3v2c-2.6-.4-4-2.4-4-5V3zm6 0h4v4h-2c0 1.5.7 2.5 2 3v2c-2.6-.4-4-2.4-4-5V3z"/></svg>BibTeX</a>
+    </div>
+
+    <div class="clocks" aria-label="Two clocks: under the paused clock nothing moves while the model thinks and the robot picks Grandpa's mug; under the live clock the mugs are swapped while it thinks and the robot picks the look-alike.">
+      <div class="trk paused">
+        <span class="lab">Paused</span>
+        <div class="lane"><div class="tape"></div><div class="think">thinking · the world waits</div>
+          <div class="mugs"><span class="mug g m1"></span><span class="mug m2"></span><span class="mug m3"></span><span class="grab"></span></div>
+          <span class="verdict">✓</span></div>
+      </div>
+      <div class="trk live">
+        <span class="lab">Live</span>
+        <div class="lane"><div class="tape"></div><div class="think">thinking · the world keeps moving</div>
+          <div class="mugs"><span class="mug g m1"></span><span class="mug m2"></span><span class="mug m3"></span><span class="grab"></span></div>
+          <span class="verdict">✗</span></div>
+      </div>
+    </div>
+    <p class="cap0">The purple mug is Grandpa's; in the scene the mugs look identical. Same model, same seed: under the live
+    clock the son swaps the mugs while the model thinks, and the robot lifts the look-alike.</p>
+  </div>
+</header>
+
+<main>
+<section class="gut" style="padding-top:44px">
+  <div class="wrap">
+    <figure class="teaser">
+      <video src="media/01_grandpas_mug_opus_paused_vs_live.mp4" poster="media/01_grandpas_mug_opus_paused_vs_live.jpg" muted loop playsinline controls preload="metadata"></video>
+      <figcaption><b>One recorded episode, two clocks.</b> Grandpa's mug (BEHAVIOR-1K, Claude Opus 5.5). Paused (left), thinking
+      costs no world time and the episode succeeds. Live (right), the son swaps the mugs while the model thinks; the model
+      commits to the mark it saw before the swap was over and lifts the look-alike, although the swap was in its own
+      camera stream (bottom row: the robot's head camera, the frames the model receives).</figcaption>
+    </figure>
+  </div>
+</section>
+
+<section class="gut abstract" id="abstract">
+  <div class="narrow">
+    <p class="kick">Abstract</p>
+    <p>Robot agents built on frontier vision-language models now solve most robot memory benchmarks. Does this mean they
+    can remember what they need in a home, where people and machines keep moving things? Existing memory benchmarks
+    cannot answer this question, because they pause the simulator while the model thinks: nothing can change during a
+    decision, so whatever the robot remembers is still true when it acts. We introduce RoboLiveMem, a benchmark that runs
+    the same memory tasks twice, once with the world paused while the model thinks and once with the world running. It
+    contains 29 task families in three tiers, from 16 realistic BEHAVIOR-1K scenes of homes, workshops and a restaurant
+    to controlled ManiSkill tasks. Every task mixes real changes with harmless look-alikes and runs without any change, so
+    that no fixed strategy succeeds, and most tasks have a twin that keeps the change in view, which separates forgetting
+    from acting too late. Testing 16 models on 34,176 episodes, we find three surprises. (1) Paused results hide the
+    problem: when a remembered object changes in a realistic scene, the 8 frontier Claude and GPT models succeed in 97% of
+    episodes on average with the world paused, but in only 50% with the world running, and their ranking changes: Claude
+    Opus 5.5, which never fails when paused, succeeds in 44%. (2) Speed is not the fix: slower models do no worse, and
+    models given only 2 s per decision still fall at least 36 points below their paused success. (3) Models see the change
+    but act on camera frames from before it ended. Looking again just before acting closes most of the realistic gap, yet
+    when identical objects are swapped several times, all nine models we test still lose points to memory.</p>
+  </div>
+</section>
+
+<div class="band gut">
+<section id="protocol">
+  <div class="wrap">
+    <p class="kick">01 · The protocol</p>
+    <h2>Same task, same seed, two clocks: <em>does the world wait?</em></h2>
+    <p class="lead">A decision observes the world at time t<sub>o</sub>, thinks for ℓ seconds and starts its command at
+    t<sub>c</sub> = t<sub>o</sub> + κ(ℓ). Under the paused clock κ = 0, as in existing benchmarks. Under the live clock
+    κ = ℓ: while the robot holds still, people, robots and machines keep moving and the camera keeps recording, and those
+    frames reach the model only with its next decision. A fixed clock κ = L varies latency on its own.</p>
+    <div class="pvl">
+      <div class="pv"><div class="k">P<small>hidden · paused</small></div><p>What current benchmarks report. A change can never fall between the frame a decision reads and the moment its command runs.</p></div>
+      <div class="pv"><div class="k">L<small>hidden · live</small></div><p>The world runs while the model thinks. A command decided on an earlier frame may act on a changed scene.</p></div>
+      <div class="pv"><div class="k">V<small>visible twin · live</small></div><p>The same change at the same time, but a sticker, an open lid or a token keeps the decisive state in view.</p></div>
+    </div>
+    <div class="eq">S<sub>P</sub> − S<sub>L</sub> &nbsp;=&nbsp; (S<sub>P</sub> − S<sub>V</sub>) &nbsp;+&nbsp; (S<sub>V</sub> − S<sub>L</sub>)
+      &nbsp;&nbsp;<i>live drop = execution (latency and acting on old frames) + memory</i></div>
+    <h3 style="margin:30px 0 10px">Eight conditions make an instance a test of live memory</h3>
+    <div class="conds">
+      <div class="cond"><b>L1 memory needed</b><span>the decisive state is hidden when the robot acts</span></div>
+      <div class="cond"><b>L2 own evidence</b><span>the change happens in the robot's camera view</span></div>
+      <div class="cond"><b>L3 scheduled</b><span>the change starts on a clock, not on agent actions</span></div>
+      <div class="cond"><b>L4 visible cause</b><span>a person, robot or machine makes it</span></div>
+      <div class="cond"><b>L5 no hints</b><span>no text says whether or when it happens</span></div>
+      <div class="cond"><b>L6 no fixed winner</b><span>seeds mix changes, look-alike decoys and none</span></div>
+      <div class="cond"><b>L7 controls</b><span>a visible twin keeps the state in view</span></div>
+      <div class="cond"><b>L8 solvable</b><span>a privileged script solves every seed</span></div>
+    </div>
+  </div>
+</section>
+</div>
+
+<section class="gut" id="benchmark">
+  <div class="wrap">
+    <p class="kick">02 · The benchmark</p>
+    <h2>Three tiers that trade realism for control</h2>
+    <div class="stats">
+      <div class="stat"><div class="v">29</div><div class="d">task families</div></div>
+      <div class="stat"><div class="v">3</div><div class="d">tiers, from BEHAVIOR-1K to ManiSkill</div></div>
+      <div class="stat"><div class="v">16</div><div class="d">models from eight vendors</div></div>
+      <div class="stat"><div class="v">34,176</div><div class="d">episodes</div></div>
+    </div>
+    <figure class="paper"><img src="img/tiers.jpg" alt="The 16 realistic BEHAVIOR-1K scenes, three semi-realistic MuJoCo kitchen families and two controlled ManiSkill tasks" loading="lazy">
+    </figure>
+    <figcaption>The 16 realistic scenes as the agent first sees them, with the numbered marks its skills act on, then three
+    MuJoCo kitchen families and two ManiSkill tasks in their visible-twin form. U: update (a remembered state is moved,
+    swapped or hidden). W: write (a one-time event must be stored). V: has a visible twin.</figcaption>
+    <div class="tiers">
+      <div class="tier r"><span class="t">Realistic · BEHAVIOR-1K</span><h3>People, robots and machines</h3>
+        <p>Grandpa's mug swapped for a look-alike, car keys hidden in lidded baskets, a parcel stored in one of several identical lockers,
+        Mom's tea already sweetened. The model works as a tool-using agent that decides when to look, act or wait.</p>
+        <div class="nums"><span class="chip">16 scenes</span><span class="chip">9 twins</span><span class="chip">12 seeds</span><span class="chip">5,469 episodes</span></div></div>
+      <div class="tier s"><span class="t">Semi-realistic · MuJoCo kitchen</span><h3>A person at the counter</h3>
+        <p>Identical mugs or covered dishes swapped, a hot plate switched on and off before a plastic bowl lands on it, a jar
+        shown once, sugar cubes counted. One model call per step.</p>
+        <div class="nums"><span class="chip">8 families</span><span class="chip">8 twins</span><span class="chip">36 seeds</span><span class="chip">13,774 episodes</span></div></div>
+      <div class="tier c"><span class="t">Controlled · ManiSkill</span><h3>Scripted object motions</h3>
+        <p>RoboMME scenes where containers hiding cubes swap three or four times, identical cubes trade places, or targets
+        are highlighted only once after hand-over.</p>
+        <div class="nums"><span class="chip">5 tasks</span><span class="chip">5 twins</span><span class="chip">40 seeds</span><span class="chip">12,053 episodes</span></div></div>
+    </div>
+  </div>
+</section>
+
+<section class="gut" id="results">
+  <div class="wrap">
+    <p class="kick">03 · Main results</p>
+    <h2>Paused success says little about <em>live</em> success</h2>
+    <p class="lead">Success on the event seeds of the hidden families, where the decisive state changes. On the realistic tier every
+    Claude and GPT model scores at least 94% paused; live, the same eight models range from 8% to 86%.</p>
+    <div class="tabs" role="tablist" id="tabs"></div>
+    <div class="legend"><span><i class="o"></i>paused (the world waits)</span><span><i class="f"></i>live (the world keeps running)</span><span><i class="r"></i>L − P</span><span style="color:var(--muted)">no change: live success on null seeds</span></div>
+    <div class="chart" id="dumbbell"></div>
+    <p class="note" id="tabnote"></p>
+  </div>
+</section>
+
+<div class="band gut">
+<section id="findings">
+  <div class="wrap">
+    <p class="kick">04 · Findings</p>
+    <h2>Four questions, four answers</h2>
+    <div class="finds">
+      <article class="find">
+        <span class="n">Q1 · Does paused success predict live success?</span>
+        <h3>No. The ranking changes.</h3>
+        <div class="big">97%<span class="arrow">→</span><span class="dn">50%</span></div>
+        <p>When a remembered object changes in a realistic scene, the eight Claude and GPT models fall from 97% on average
+        with the world paused to 50% with it running. With no change, live success stays at 92 to 100%: the loss comes from
+        changes that a paused world never lets happen.</p>
+        <img src="img/scatter.png" alt="Paused against live success, one point per model and tier; nearly all points lie below the diagonal">
+      </article>
+      <article class="find">
+        <span class="n">Q2 · Is it latency?</span>
+        <h3>No. A faster agent would not avoid the drop.</h3>
+        <div class="big">≥ 36 <span style="font-size:.45em;color:var(--muted)">points below paused at 2 s per decision</span></div>
+        <p>The three slowest frontier models are the three most robust (Spearman ρ = +0.76 between latency and live
+        success). Charged a fixed 2 s per decision, every model still stays 36 to 61 points below its paused success.</p>
+        <img src="img/speed.png" alt="Latency against live success, and live success under fixed clocks">
+      </article>
+      <article class="find">
+        <span class="n">Q3 · Do agents see the change?</span>
+        <h3>Yes, but they act on frames from before it ended.</h3>
+        <div class="big">62%<span class="arrow">→</span><span class="up">97%</span></div>
+        <p>On the realistic tier 51 to 80% of decisive decisions are stale, and on event seeds Opus succeeds in 1 of 34 stale and
+        21 of 23 fresh episodes. Looking once more before acting, the commit check, lifts Opus from 62% to 97% with no training.</p>
+        <img src="img/fresh.png" alt="Success of stale and fresh decisive decisions per model">
+      </article>
+      <article class="find">
+        <span class="n">Q4 · Is memory still a problem?</span>
+        <h3>Yes, when identical objects are swapped again and again.</h3>
+        <div class="big">+1 to +22 <span style="font-size:.45em;color:var(--muted)">points: the memory term, every model, every tier</span></div>
+        <p>Having to remember a change rather than see it costs every model points on every tier. On repeated swaps,
+        looking again does not help: with the commit check, all nine models tested still lose at least 12 points to memory.</p>
+        <img src="img/decomp.png" alt="Paused, visible twin and live success per model and tier">
+      </article>
+    </div>
+  </div>
+</section>
+</div>
+
+<section class="gut" id="commit">
+  <div class="wrap">
+    <p class="kick">05 · Looking again before acting</p>
+    <h2>One more look closes the realistic gap, <em>not the swaps</em></h2>
+    <p class="lead">The commit check: just before a command runs, the robot looks at its target once more; if the view
+    there changed since the agent's last frame, the command is cancelled with a neutral message and the agent decides
+    again. Live success on event and decoy seeds, without and with the check, and the visible twin with the check.</p>
+    <div class="legend"><span><i class="o"></i>hidden, without the check</span><span><i class="f"></i>hidden, with the check</span><span><i class="o" style="border-color:var(--amber)"></i>visible twin, with the check</span></div>
+    <div class="chart" id="commitchart"></div>
+    <p class="note">Realistic: the 13 scenes where the check applies (hidden n = 104, twins n = 56). Controlled: the three swap
+    tasks (n = 80). Memory term: S<sub>V</sub> − S<sub>L</sub> with the check, on the families with a visible twin; what
+    remains of it is memory that re-observation cannot replace.</p>
+  </div>
+</section>
+
+<div class="band gut">
+<section id="videos">
+  <div class="wrap">
+    <p class="kick">06 · Episodes</p>
+    <h2>Watch the world move while the model thinks</h2>
+    <p class="lead">Recorded realistic-tier episodes from the paper's runs, not cut or sped up. Top: a third-person view.
+    Bottom: the robot's head camera, the frames the model receives. Paused recordings are shorter, because the world
+    stands still while the model thinks.</p>
+    <div class="vids">
+      <div class="vid"><video src="media/02_grandpas_mug_opus_live_vs_commit.mp4" poster="media/02_grandpas_mug_opus_live_vs_commit.jpg" muted loop playsinline controls preload="none"></video>
+        <h3>Grandpa's mug: live, without and with the commit check</h3>
+        <p>The same scene and seed. With the check, the decisive pick happens after the swap.</p>
+        <div class="tags"><span class="tag bad">without: fails</span><span class="tag ok">with the check: succeeds</span></div></div>
+      <div class="vid"><video src="media/03_grandpas_mug_opus_vs_fable_live.mp4" poster="media/03_grandpas_mug_opus_vs_fable_live.jpg" muted loop playsinline controls preload="none"></video>
+        <h3>Grandpa's mug: Opus 5.5 against Fable 5.1, both live</h3>
+        <p>Fable 5.1 decides only after the swap is over.</p>
+        <div class="tags"><span class="tag bad">Opus 5.5: fails</span><span class="tag ok">Fable 5.1: succeeds</span></div></div>
+      <div class="vid"><video src="media/04_car_keys_opus_vs_astra_live.mp4" poster="media/04_car_keys_opus_vs_astra_live.jpg" muted loop playsinline controls preload="none"></video>
+        <h3>Car keys: Opus 5.5 against GPT-6 Astra, both live</h3>
+        <p>Opus commits before the teenager has put the keys into a basket; Astra decides after.</p>
+        <div class="tags"><span class="tag bad">Opus 5.5: fails</span><span class="tag ok">Astra: succeeds</span></div></div>
+      <div class="vid"><video src="media/05_parcel_locker_opus_paused_vs_live.mp4" poster="media/05_parcel_locker_opus_paused_vs_live.jpg" muted loop playsinline controls preload="none"></video>
+        <h3>Parcel locker: paused against live</h3>
+        <p>Under the live clock the model acts before the courier robot has stored the parcel in a locker.</p>
+        <div class="tags"><span class="tag ok">paused: succeeds</span><span class="tag bad">live: fails</span></div></div>
+      <div class="vid wide" style="grid-column:1/-1"><video src="media/06_grandpas_mug_opus_null_live.mp4" poster="media/06_grandpas_mug_opus_null_live.jpg" muted loop playsinline controls preload="none"></video>
+        <h3>Grandpa's mug, null seed: nothing changes</h3>
+        <p>The son only walks by, and Claude Opus 5.5 succeeds under the live clock. The running clock alone is not what
+        breaks the agents; the changes are.</p>
+        <div class="tags"><span class="tag ok">live: succeeds</span></div></div>
+    </div>
+  </div>
+</section>
+</div>
+
+<section class="gut" id="code">
+  <div class="wrap">
+    <p class="kick">07 · Code</p>
+    <h2>Try the protocol in a minute, then bring your own model</h2>
+    <div class="codegrid">
+      <div>
+        <p>The package holds the clocks, the commit check, the decomposition with paired bootstrap intervals and one chat
+        interface for OpenAI, Anthropic, Gemini, Amazon Bedrock and any OpenAI-compatible server, with keys read from
+        environment variables. A small 2-D version of Grandpa's mug runs anywhere; the three simulator tiers of the paper
+        are in <code>tiers/</code>.</p>
+        <p><a href="https://github.com/RoboLiveMem/RoboLiveMem">github.com/RoboLiveMem/RoboLiveMem</a></p>
+      </div>
+<pre><span class="c"># no GPU, no simulator, no key</span>
+git clone https://github.com/RoboLiveMem/RoboLiveMem.git
+cd RoboLiveMem && pip install -e .
+python -m robolivemem
+
+<span class="c"># your model (keys from .env.example)</span>
+python -m robolivemem --model anthropic:claude-haiku-5-5
+python -m robolivemem --model openai:&lt;model&gt; --commit</pre>
+    </div>
+  </div>
+</section>
+
+<section class="gut" id="cite">
+  <div class="wrap">
+    <p class="kick">08 · Citation</p>
+    <button class="copy" type="button" id="copybib">copy</button>
+<pre id="bib">@misc{zhang2026robolivemem,
+  title  = {RoboLiveMem: Is Robot Memory Solved When the World Does Not Wait?},
+  author = {Zhang, Yunbei and Zhang, Yuyou and Wang, Janet and Liu, Ming and Li, Yijiang and Wang, Yikai and
+            Ye, Weirui and Zhao, Ding and Hamm, Jihun},
+  year   = {2026},
+  url    = {https://robolivemem.github.io}
+}</pre>
+  </div>
+</section>
+</main>
+
+<footer class="gut"><span class="tick"></span>RoboLiveMem · 2026</footer>
+
+<script>
+(function () {
+  const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+  const NS = "http://www.w3.org/2000/svg";
+  function el(tag, attrs, parent, text) {
+    const e = document.createElementNS(NS, tag);
+    for (const k in attrs) e.setAttribute(k, attrs[k]);
+    if (text !== undefined) e.textContent = text;
+    if (parent) parent.appendChild(e);
+    return e;
+  }
+
+  /* main table: event seeds, P / L / none (live, null seeds); Claude and GPT first, then the API-agent models */
+  const M = [
+    ["Claude Opus 5.5", [100.0, 43.8, 92.2], [97.6, 98.8, 100.0], [89.2, 61.5, 91.0]],
+    ["GPT-6 Astra", [93.8, 79.7, 98.4], [100.0, 100.0, 100.0], [75.4, 50.8, 88.1]],
+    ["Claude Sonnet 5.5", [98.4, 34.4, 96.9], [94.0, 73.8, 100.0], [60.0, 44.6, 77.6]],
+    ["Claude Haiku 5.5", [95.3, 21.9, 100.0], [89.3, 72.6, 92.9], [33.8, 24.6, 77.6]],
+    ["GPT-6 Luna", [95.3, 7.8, 98.4], [89.3, 64.3, 98.8], [46.2, 13.8, 67.2]],
+    ["GPT-6.1 Sol", [100.0, 68.8, 98.4], [100.0, 98.8, 100.0], [73.8, 47.7, 88.1]],
+    ["GPT-6.1 Terra", [100.0, 56.2, 100.0], [100.0, 95.2, 100.0], [61.5, 49.2, 86.6]],
+    ["Claude Fable 5.1", [93.8, 85.9, 92.2], [100.0, 95.2, 100.0], [73.8, 50.8, 86.6]],
+    ["Gemini 4 Argon", [96.4, 80.4, 93.8], [100.0, 88.9, 92.4], [72.3, 27.7, 76.1]],
+    ["Gemini 4 Carbon", [93.8, 73.4, 90.6], [100.0, 67.9, 90.4], [98.4, 6.2, 52.2]],
+    ["Grok 4.7", [96.8, 34.9, 98.4], [91.7, 72.6, 98.8], [60.0, 24.6, 49.3]],
+    ["Nova 2 Lite", [88.7, 14.3, 89.1], [51.2, 44.0, 53.6], [10.8, 1.5, 25.4]],
+    ["Kimi K2.5 †", [90.5, 9.5, 92.2], [81.0, 53.6, 89.3], [23.1, 9.2, 44.8]],
+    ["Qwen3-VL-235B †", [98.4, 9.5, 98.4], [64.3, 26.2, 64.3], [17.7, 7.7, 37.3]],
+    ["Gemma 3 27B †", [87.3, 1.6, 85.9], [56.0, 29.8, 54.8], [21.5, 7.7, 28.4]],
+    ["Ministral 3 14B †", [76.2, 12.7, 78.1], [48.8, 32.1, 59.5], [13.8, 4.6, 19.4]],
+  ];
+  const TABS = [
+    { label: "Realistic · BEHAVIOR-1K", i: 1, groups: ["In Claude Code or Codex", "In our own agent, same tools"],
+      note: "16 BEHAVIOR-1K scenes, 55 to 64 event seeds per cell. Claude Fable 5.1 and GPT-6 Astra share the lowest paused score among the Claude and GPT models (94%) and have the two highest live scores; Claude Opus 5.5, perfect when paused, falls to 44%. † open weights." },
+    { label: "Semi-realistic · MuJoCo", i: 2, groups: ["Claude and GPT", "Other models"],
+      note: "8 MuJoCo kitchen families, 84 event seeds per cell, all models in one harness. The simplest scenes: the five strongest models lose at most 5 points, the others up to 38. † open weights." },
+    { label: "Controlled · ManiSkill", i: 3, groups: ["Claude and GPT", "Other models"],
+      note: "5 RoboMME-scene tasks with repeated swaps and one-time cues, 65 event seeds per cell (Qwen3-VL: 62 paused). Every model loses 9 to 92 points. † open weights." },
+  ];
+
+  function drawDumbbell(tab) {
+    const host = document.getElementById("dumbbell"); host.innerHTML = "";
+    const rows = [];
+    [[0, 8], [8, 16]].forEach(([a, b], g) => {
+      rows.push({ head: tab.groups[g] });
+      M.slice(a, b).map(r => ({ name: r[0], p: r[tab.i][0], l: r[tab.i][1], n: r[tab.i][2] }))
+        .sort((x, y) => y.l - x.l).forEach(r => rows.push(r));
+    });
+    const W = 1000, rowH = 31, top = 30, left = 206, right = 170;
+    const H = top + rows.length * rowH + 30;
+    const X = v => left + v / 100 * (W - left - right);
+    const svg = el("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": tab.label + ": paused and live success per model" }, host);
+    [0, 25, 50, 75, 100].forEach(t => {
+      el("line", { x1: X(t), x2: X(t), y1: top - 10, y2: H - 26, stroke: css("--grid"), "stroke-width": 1 }, svg);
+      el("text", { x: X(t), y: H - 8, "text-anchor": "middle", "font-size": 12.5, fill: css("--muted") }, svg, t + "%");
+    });
+    el("text", { x: W - right + 26, y: top - 12, "font-size": 12, fill: css("--muted"), "font-weight": 600 }, svg, "L − P");
+    el("text", { x: W - right + 96, y: top - 12, "font-size": 12, fill: css("--muted"), "font-weight": 600 }, svg, "no change");
+    rows.forEach((r, k) => {
+      const y = top + k * rowH + rowH / 2;
+      if (r.head) {
+        el("text", { x: 6, y: y + 5, "font-size": 12.5, "font-weight": 600, fill: css("--live"), "letter-spacing": ".06em" }, svg, r.head.toUpperCase());
+        el("line", { x1: 6, x2: W - 6, y1: y + 12, y2: y + 12, stroke: css("--line") }, svg);
+        return;
+      }
+      const g = el("g", {}, svg);
+      el("title", {}, g, `${r.name}: paused ${r.p}%, live ${r.l}%, change ${(r.l - r.p).toFixed(1)}, no change (live) ${r.n}%`);
+      el("rect", { x: 0, y: y - rowH / 2, width: W, height: rowH, fill: "transparent" }, g);
+      el("text", { x: left - 16, y: y + 5, "text-anchor": "end", "font-size": 14.5, fill: css("--ink2") }, g, r.name);
+      el("line", { x1: X(r.l), x2: X(r.p), y1: y, y2: y, stroke: css("--live-soft"), "stroke-width": 6, "stroke-linecap": "round" }, g);
+      el("circle", { cx: X(r.p), cy: y, r: 6.5, fill: css("--card"), stroke: css("--paused"), "stroke-width": 2.2 }, g);
+      el("circle", { cx: X(r.l), cy: y, r: 6.5, fill: css("--live"), stroke: css("--card"), "stroke-width": 2 }, g);
+      const d = r.l - r.p;
+      el("text", { x: W - right + 26, y: y + 5, "font-size": 14, "font-weight": Math.abs(d) >= 30 ? 700 : 500,
+        fill: d < -2 ? css("--drop") : css("--muted") }, g, (d < 0 ? "−" : "+") + Math.abs(d).toFixed(1));
+      el("text", { x: W - right + 96, y: y + 5, "font-size": 14, fill: css("--muted") }, g, r.n.toFixed(1));
+    });
+    document.getElementById("tabnote").textContent = tab.note;
+  }
+  let cur = TABS[0];
+  const bar = document.getElementById("tabs");
+  TABS.forEach((t, i) => {
+    const b = document.createElement("button");
+    b.type = "button"; b.textContent = t.label; b.setAttribute("role", "tab"); b.setAttribute("aria-selected", i === 0 ? "true" : "false");
+    b.addEventListener("click", () => { [...bar.children].forEach(x => x.setAttribute("aria-selected", "false")); b.setAttribute("aria-selected", "true"); cur = t; drawDumbbell(t); });
+    bar.appendChild(b);
+  });
+
+  /* commit check: hidden live without -> with the check; twin with the check */
+  const C = [   /* name, hidden live without, with the check, twin with the check, memory term with the check (paper Tab. 5) */
+    ["Realistic", [["Opus 5.5", 61.5, 97.1, 100.0, 0.0], ["Astra", 80.8, 95.2, 100.0, 1.8], ["Sol", 77.9, 92.3, 100.0, 1.8],
+                   ["Terra", 68.3, 87.5, 92.9, -1.8], ["Fable 5.1", 86.5, 96.2, 100.0, 3.6]]],
+    ["Controlled swaps", [["Opus 5.5", 62.5, 80.0, 95.0, 15.0], ["Astra", 61.2, 81.2, 100.0, 18.8], ["Sonnet 5.5", 58.8, 67.5, 98.8, 31.2],
+                          ["Haiku 5.5", 40.0, 37.5, 72.5, 35.0], ["Luna", 33.8, 41.2, 81.2, 40.0], ["Sol", 51.2, 72.5, 98.8, 26.3],
+                          ["Terra", 53.8, 73.8, 100.0, 26.2], ["Fable 5.1", 38.8, 26.2, 83.8, 57.5], ["Grok 4.7", 23.8, 20.0, 32.5, 12.5]]],
+  ];
+  function drawCommit() {
+    const host = document.getElementById("commitchart"); host.innerHTML = "";
+    const rows = [];
+    C.forEach(([g, rs]) => { rows.push({ head: g }); rs.forEach(r => rows.push({ name: r[0], a: r[1], b: r[2], v: r[3], m: r[4] })); });
+    const W = 1000, rowH = 28, top = 24, left = 206, right = 150;
+    const H = top + rows.length * rowH + 30;
+    const X = v => left + v / 100 * (W - left - right);
+    const svg = el("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": "Live success without and with the commit check, and the visible twin with the check" }, host);
+    [0, 25, 50, 75, 100].forEach(t => {
+      el("line", { x1: X(t), x2: X(t), y1: top - 10, y2: H - 26, stroke: css("--grid") }, svg);
+      el("text", { x: X(t), y: H - 8, "text-anchor": "middle", "font-size": 12.5, fill: css("--muted") }, svg, t + "%");
+    });
+    el("text", { x: W - right + 26, y: top - 10, "font-size": 12, fill: css("--muted"), "font-weight": 600 }, svg, "memory term");
+    const defs = el("defs", {}, svg);
+    const mk = el("marker", { id: "ah", viewBox: "0 0 10 10", refX: 8, refY: 5, markerWidth: 7, markerHeight: 7, orient: "auto-start-reverse" }, defs);
+    el("path", { d: "M0,0 L10,5 L0,10 z", fill: css("--live") }, mk);
+    rows.forEach((r, k) => {
+      const y = top + k * rowH + rowH / 2;
+      if (r.head) {
+        el("text", { x: 6, y: y + 5, "font-size": 12.5, "font-weight": 600, fill: css("--live"), "letter-spacing": ".06em" }, svg, r.head.toUpperCase());
+        el("line", { x1: 6, x2: W - 6, y1: y + 12, y2: y + 12, stroke: css("--line") }, svg);
+        return;
+      }
+      const g = el("g", {}, svg);
+      el("title", {}, g, `${r.name}: hidden ${r.a}% → ${r.b}% with the check; visible twin with the check ${r.v}%; memory term ${r.m}`);
+      el("rect", { x: 0, y: y - rowH / 2, width: W, height: rowH, fill: "transparent" }, g);
+      el("text", { x: left - 16, y: y + 5, "text-anchor": "end", "font-size": 14.5, fill: css("--ink2") }, g, r.name);
+      el("line", { x1: X(r.b), x2: X(r.v), y1: y, y2: y, stroke: css("--amber"), "stroke-width": 1.5, "stroke-dasharray": "3 4", opacity: .8 }, g);
+      el("circle", { cx: X(r.a), cy: y, r: 5.5, fill: css("--card"), stroke: css("--paused"), "stroke-width": 2 }, g);
+      if (Math.abs(r.b - r.a) > 2.5) {
+        const dir = r.b > r.a ? 1 : -1;
+        el("line", { x1: X(r.a) + dir * 8, x2: X(r.b) - dir * 9, y1: y, y2: y, stroke: css("--live"), "stroke-width": 2, "marker-end": "url(#ah)" }, g);
+      }
+      el("circle", { cx: X(r.b), cy: y, r: 6, fill: css("--live") }, g);
+      el("circle", { cx: X(r.v), cy: y, r: 6, fill: "none", stroke: css("--amber"), "stroke-width": 2.2 }, g);
+      const m = r.m;
+      el("text", { x: W - right + 26, y: y + 5, "font-size": 14, "font-weight": m >= 5 ? 700 : 500, fill: m >= 5 ? css("--ink") : css("--muted") }, g,
+        (m < 0 ? "−" : "+") + Math.abs(m).toFixed(1));
+    });
+  }
+  function redraw() { drawDumbbell(cur); drawCommit(); }
+  redraw();
+  try { matchMedia("(prefers-color-scheme: dark)").addEventListener("change", redraw); } catch (e) {}
+  try { new MutationObserver(redraw).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] }); } catch (e) {}
+
+  /* videos play while visible */
+  try {
+    const io = new IntersectionObserver(es => es.forEach(e => {
+      const v = e.target;
+      if (e.isIntersecting) { if (v.preload === "none") v.preload = "auto"; const p = v.play(); if (p && p.catch) p.catch(() => {}); }
+      else v.pause();
+    }), { threshold: 0.4 });
+    document.querySelectorAll("video").forEach(v => io.observe(v));
+  } catch (e) {}
+
+  /* copy BibTeX */
+  const cb = document.getElementById("copybib");
+  cb.addEventListener("click", () => {
+    const txt = document.getElementById("bib").textContent;
+    const done = () => { cb.textContent = "copied"; setTimeout(() => { cb.textContent = "copy"; }, 1600); };
+    try {
+      navigator.clipboard.writeText(txt).then(done, () => { selectBib(); });
+    } catch (e) { selectBib(); }
+  });
+  function selectBib() {
+    const r = document.createRange(); r.selectNodeContents(document.getElementById("bib"));
+    const s = getSelection(); s.removeAllRanges(); s.addRange(r); cb.textContent = "selected";
+  }
+})();
+</script>
+</body>
+</html>
